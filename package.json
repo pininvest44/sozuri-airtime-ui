@@ -1,5 +1,5 @@
 {
-  "name": "sozuri-render-proxy",
+  "name": "sozuri-airtime-app",
   "version": "1.0.0",
   "type": "module",
   "main": "server.js",
