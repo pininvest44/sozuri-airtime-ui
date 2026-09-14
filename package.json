@@ -1,0 +1,12 @@
+{
+  "name": "sozuri-airtime-proxy",
+  "version": "1.0.0",
+  "main": "api/airtime.js",
+  "type": "module",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
