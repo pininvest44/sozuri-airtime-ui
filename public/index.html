@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sozuri Airtime Dispatcher</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .badge-safaricom { background-color: #28a745; color: white; }
+    .badge-airtel { background-color: #dc3545; color: white; }
+    .badge-telkom { background-color: #007bff; color: white; }
+  </style>
+</head>
+<body class="bg-light">
+
+  <nav class="navbar navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid px-4">
+      <span class="navbar-brand fw-bold">
+        <i class="bi bi-phone-vibrate text-warning me-2"></i>Sozuri Airtime Portal
+      </span>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <div class="row g-4">
+
+      <!-- Left Column: Settings & Input -->
+      <div class="col-lg-7">
+        
+        <!-- Project Config -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white fw-bold">Project Configuration</div>
+          <div class="card-body">
+            <label class="form-label small fw-semibold">Project Name</label>
+            <input type="text" id="projectName" class="form-control" value="Default" placeholder="e.g., RewardsProject">
+          </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white">
+            <ul class="nav nav-tabs card-header-tabs" id="inputTabs">
+              <li class="nav-item">
+                <button class="nav-link active" id="single-tab" data-bs-toggle="tab" data-bs-target="#single" type="button">Single Input</button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" id="bulk-tab" data-bs-toggle="tab" data-bs-target="#bulk" type="button">Bulk Paste</button>
+              </li>
+            </ul>
+          </div>
+          <div class="card-body">
+            <div class="tab-content">
+              
+              <!-- Single Entry -->
+              <div class="tab-pane fade show active" id="single">
+                <form id="singleForm" class="row g-2">
+                  <div class="col-md-6">
+                    <input type="text" id="phoneInput" class="form-control" placeholder="+254711000111 or 0711..." required>
+                  </div>
+                  <div class="col-md-4">
+                    <input type="number" id="amountInput" class="form-control" placeholder="Amount (KES)" min="10" max="5000" required>
+                  </div>
+                  <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i></button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Bulk Paste -->
+              <div class="tab-pane fade" id="bulk">
+                <label class="form-label small text-muted">Paste line by line in <code>phone, amount</code> format:</label>
+                <textarea id="bulkInput" class="form-control font-monospace mb-2" rows="4" placeholder="+254711000111, 50&#10;0722000222, 100"></textarea>
+                <button id="processBulkBtn" class="btn btn-secondary btn-sm">Process Bulk Queue</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Queue Table -->
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center fw-bold">
+            <span>Recipient Queue (<span id="recipientCount">0</span>/1000)</span>
+            <button id="clearBtn" class="btn btn-outline-danger btn-sm">Clear All</button>
+          </div>
+          <div class="table-responsive" style="max-height: 280px;">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>#</th>
+                  <th>Phone Number</th>
+                  <th>Carrier</th>
+                  <th>Amount</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody id="recipientTableBody">
+                <tr id="emptyRow">
+                  <td colspan="5" class="text-center text-muted py-4">No numbers added yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Summary & Actions -->
+      <div class="col-lg-5">
+        <div class="card bg-dark text-white shadow-sm border-0 mb-4">
+          <div class="card-body">
+            <h6 class="text-uppercase text-secondary small fw-bold mb-3">Batch Summary</h6>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Total Recipients</span>
+              <span class="fs-4 fw-bold text-info" id="sumRecipients">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+              <span>Total Amount</span>
+              <span class="fs-3 fw-bold text-success" id="sumAmount">KES 0.00</span>
+            </div>
+            <hr class="border-secondary">
+            <button id="dispatchBtn" class="btn btn-warning w-100 btn-lg fw-bold text-dark" disabled>
+              <i class="bi bi-send-fill me-2"></i>Send Airtime
+            </button>
+          </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+            <span>API Response</span>
+            <span id="responseStatus" class="badge bg-secondary">Idle</span>
+          </div>
+          <div class="card-body bg-dark text-light">
+            <pre id="jsonOutput" class="mb-0 text-success font-monospace small" style="max-height: 250px; overflow-y: auto;">// Server response will show here...</pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let recipients = [];
+
+    const phoneInput = document.getElementById('phoneInput');
+    const amountInput = document.getElementById('amountInput');
+    const tableBody = document.getElementById('recipientTableBody');
+    const emptyRow = document.getElementById('emptyRow');
+    const recipientCountEl = document.getElementById('recipientCount');
+    const sumRecipientsEl = document.getElementById('sumRecipients');
+    const sumAmountEl = document.getElementById('sumAmount');
+    const dispatchBtn = document.getElementById('dispatchBtn');
+    const jsonOutput = document.getElementById('jsonOutput');
+    const responseStatus = document.getElementById('responseStatus');
+
+    function detectCarrier(phone) {
+      const clean = phone.replace(/[^0-9]/g, '');
+      let prefix = clean.startsWith('254') ? clean.substring(3, 5) : (clean.startsWith('0') ? clean.substring(1, 3) : '');
+      const safaricom = ['70', '71', '72', '79', '740', '741', '742', '743', '745', '746', '748', '757', '758', '759', '768', '769', '110', '111', '112', '113', '114', '115'];
+      const airtel = ['73', '75', '78', '100', '101', '102', '103', '104', '105', '106'];
+      const telkom = ['77', '116'];
+
+      if (safaricom.some(p => prefix.startsWith(p))) return { name: 'Safaricom', class: 'badge-safaricom' };
+      if (airtel.some(p => prefix.startsWith(p))) return { name: 'Airtel', class: 'badge-airtel' };
+      if (telkom.some(p => prefix.startsWith(p))) return { name: 'Telkom', class: 'badge-telkom' };
+      return { name: 'Unknown', class: 'bg-secondary' };
+    }
+
+    function addRecipient(number, amount) {
+      const amt = parseFloat(amount);
+      if (isNaN(amt) || amt < 10 || amt > 5000) {
+        alert('Amount must be between 10 and 5000 KES');
+        return;
+      }
+      recipients.push({ number: number.trim(), amount: `KES ${amt.toFixed(2)}` });
+      renderTable();
+    }
+
+    function renderTable() {
+      tableBody.innerHTML = '';
+      if (recipients.length === 0) {
+        tableBody.appendChild(emptyRow);
+        dispatchBtn.disabled = true;
+        sumRecipientsEl.textContent = '0';
+        sumAmountEl.textContent = 'KES 0.00';
+        recipientCountEl.textContent = '0';
+        return;
+      }
+
+      let total = 0;
+      recipients.forEach((item, index) => {
+        total += parseFloat(item.amount.replace('KES ', ''));
+        const carrier = detectCarrier(item.number);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td class="font-monospace">${item.number}</td>
+          <td><span class="badge ${carrier.class}">${carrier.name}</span></td>
+          <td><strong>${item.amount}</strong></td>
+          <td class="text-end">
+            <button class="btn btn-outline-danger btn-sm" onclick="removeRecipient(${index})"><i class="bi bi-trash"></i></button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      recipientCountEl.textContent = recipients.length;
+      sumRecipientsEl.textContent = recipients.length;
+      sumAmountEl.textContent = `KES ${total.toFixed(2)}`;
+      dispatchBtn.disabled = false;
+    }
+
+    window.removeRecipient = (i) => { recipients.splice(i, 1); renderTable(); };
+
+    document.getElementById('singleForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      addRecipient(phoneInput.value, amountInput.value);
+      phoneInput.value = ''; amountInput.value = '';
+    });
+
+    document.getElementById('processBulkBtn').addEventListener('click', () => {
+      const text = document.getElementById('bulkInput').value;
+      text.split('\n').forEach(line => {
+        const parts = line.split(',');
+        if (parts.length >= 2) addRecipient(parts[0], parts[1]);
+      });
+      document.getElementById('bulkInput').value = '';
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      recipients = [];
+      renderTable();
+    });
+
+    dispatchBtn.addEventListener('click', async () => {
+      dispatchBtn.disabled = true;
+      responseStatus.className = 'badge bg-warning text-dark';
+      responseStatus.textContent = 'Processing...';
+
+      try {
+        const response = await fetch('/api/airtime', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project: document.getElementById('projectName').value || 'Default',
+            recipients: recipients
+          })
+        });
+
+        const data = await response.json();
+        jsonOutput.textContent = JSON.stringify(data, null, 2);
+        responseStatus.className = response.ok ? 'badge bg-success' : 'badge bg-danger';
+        responseStatus.textContent = `${response.status} ${response.statusText}`;
+      } catch (err) {
+        jsonOutput.textContent = `Error: ${err.message}`;
+        responseStatus.className = 'badge bg-danger';
+        responseStatus.textContent = 'Error';
+      } finally {
+        dispatchBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
