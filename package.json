@@ -1,12 +1,13 @@
 {
-  "name": "sozuri-airtime-proxy",
+  "name": "sozuri-render-proxy",
   "version": "1.0.0",
-  "main": "api/airtime.js",
   "type": "module",
+  "main": "server.js",
   "scripts": {
-    "start": "vercel dev"
+    "start": "node server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.19.2"
   }
 }
